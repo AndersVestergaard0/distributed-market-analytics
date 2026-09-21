@@ -1,0 +1,23 @@
+# data
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# spark
+spark-warehouse/
+metastore_db/
+derby.log
+
+# os
+.DS_Store
+
+# secrets
+.env
+*.json.key
