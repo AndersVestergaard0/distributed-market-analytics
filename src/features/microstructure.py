@@ -25,10 +25,10 @@ from spark_session import get_spark  # noqa: E402
 DATA_PROCESSED = Path(__file__).resolve().parents[2] / "data" / "processed"
 
 
-def add_book_snapshot_features(book: DataFrame) -> DataFrame:
-    """Per-snapshot micro-price, mid-price, spread and OFI."""
+def add_price_features(book: DataFrame) -> DataFrame:
+    """Per-snapshot micro-price, mid-price, spread. Cheap: no shuffle/window."""
 
-    book = book.withColumn(
+    return book.withColumn(
         "mid_price", (F.col("bid_price1") + F.col("ask_price1")) / 2
     ).withColumn(
         "micro_price",
@@ -42,6 +42,16 @@ def add_book_snapshot_features(book: DataFrame) -> DataFrame:
     ).withColumn(
         "spread_bps", F.col("spread") / F.col("mid_price") * 10000
     )
+
+
+def add_flow_features(book: DataFrame) -> DataFrame:
+    """Order Flow Imbalance + log returns between consecutive snapshots.
+
+    Expensive: requires a partitioned/ordered window (shuffle + sort). Call
+    this only on the subset of rows actually needed (e.g. the early half of
+    a window for the classification task), not on data that will be
+    discarded afterwards.
+    """
 
     # Order Flow Imbalance: change in bid size minus change in ask size
     # between consecutive snapshots within the same (stock_id, time_id).
@@ -78,6 +88,12 @@ def add_book_snapshot_features(book: DataFrame) -> DataFrame:
     )
 
     return book
+
+
+def add_book_snapshot_features(book: DataFrame) -> DataFrame:
+    """Full per-snapshot feature set (price + flow). Used by the regression
+    task, which needs OFI/realized-vol computed across the whole window."""
+    return add_flow_features(add_price_features(book))
 
 
 def aggregate_book_features(book: DataFrame) -> DataFrame:

@@ -51,6 +51,13 @@ def run():
     n_time_ids = time_ids.count()
     print(f"\nDistinct time_ids: {n_time_ids:,}")
 
+    # persist the time_id -> split assignment itself so every downstream task
+    # (classification, clustering, association rules) joins against the same
+    # fixed mapping instead of each recomputing its own randomSplit, which is
+    # not guaranteed to reproduce identically across different DataFrames.
+    split_map.write.mode("overwrite").parquet(str(DATA_PROCESSED / "time_id_split.parquet"))
+    print("wrote time_id_split.parquet")
+
     # sanity check: every stock should be represented in every split
     stocks_per_split = (
         labelled.groupBy("split")
