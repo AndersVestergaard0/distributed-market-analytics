@@ -28,8 +28,7 @@ from microstructure import add_price_features, add_flow_features, aggregate_book
 
 sys.path.append(str(Path(__file__).resolve().parents[1] / "pipeline"))
 from spark_session import get_spark  # noqa: E402
-
-DATA_PROCESSED = Path(__file__).resolve().parents[2] / "data" / "processed"
+from paths import DATA_PROCESSED  # noqa: E402
 
 EARLY_CUTOFF = 300  # seconds; window is 0-599
 

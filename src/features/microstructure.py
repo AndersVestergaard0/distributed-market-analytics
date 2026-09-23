@@ -21,8 +21,7 @@ import sys
 
 sys.path.append(str(Path(__file__).resolve().parents[1] / "pipeline"))
 from spark_session import get_spark  # noqa: E402
-
-DATA_PROCESSED = Path(__file__).resolve().parents[2] / "data" / "processed"
+from paths import DATA_PROCESSED  # noqa: E402
 
 
 def add_price_features(book: DataFrame) -> DataFrame:

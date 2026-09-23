@@ -25,9 +25,8 @@ from pyspark.sql import functions as F
 
 sys.path.append(str(Path(__file__).resolve().parents[1] / "pipeline"))
 from spark_session import get_spark  # noqa: E402
-
-DATA_PROCESSED = Path(__file__).resolve().parents[2] / "data" / "processed"
-MODELS_DIR = Path(__file__).resolve().parents[2] / "data" / "models"
+from paths import DATA_PROCESSED, MODELS_DIR, ensure_dir  # noqa: E402
+from mongo_export import write_results  # noqa: E402
 
 FEATURE_COLS = [
     "avg_spread_bps",
@@ -117,10 +116,31 @@ def run():
     print(f"Final test-set evaluation for {best_name}:")
     test_scores = evaluate(fitted[best_name], test, "test")
 
-    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    ensure_dir(MODELS_DIR)
     out_path = MODELS_DIR / "regression_best"
     fitted[best_name].write().overwrite().save(str(out_path))
     print(f"\nsaved best model ({best_name}) to {out_path}")
+
+    final_stage = fitted[best_name].stages[-1]
+    importances = None
+    if hasattr(final_stage, "featureImportances"):
+        importances = {
+            col: float(val)
+            for col, val in sorted(
+                zip(FEATURE_COLS, final_stage.featureImportances.toArray()),
+                key=lambda x: -x[1],
+            )
+        }
+
+    write_results(
+        "regression_results",
+        {
+            "best_model": best_name,
+            "val_scores": {name: {k: float(v) for k, v in s.items()} for name, s in val_scores.items()},
+            "test_scores": {k: float(v) for k, v in test_scores.items()},
+            "feature_importances": importances,
+        },
+    )
 
     spark.stop()
     return best_name, test_scores

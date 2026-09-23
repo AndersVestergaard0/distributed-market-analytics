@@ -23,9 +23,9 @@ from pyspark.sql import functions as F
 
 sys.path.append(str(Path(__file__).resolve().parents[1] / "pipeline"))
 from spark_session import get_spark  # noqa: E402
+from paths import MODELS_DIR, ensure_dir  # noqa: E402
+from mongo_export import write_results  # noqa: E402
 from regression import FEATURE_COLS, DATA_PROCESSED, load_split  # noqa: E402
-
-MODELS_DIR = Path(__file__).resolve().parents[2] / "data" / "models"
 
 K_CANDIDATES = [2, 3, 4, 5]
 
@@ -105,13 +105,28 @@ def run():
     print(f"Test silhouette (k={best_k}): {test_sil:.4f}\n")
 
     print("Cluster interpretation (test set, original units):")
-    describe_clusters(test_pred).show(truncate=False)
+    cluster_rows = describe_clusters(test_pred).collect()
+    for r in cluster_rows:
+        print(dict(r.asDict()))
 
-    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    ensure_dir(MODELS_DIR)
     out_path = MODELS_DIR / "clustering_best"
     best_model.write().overwrite().save(str(out_path))
     stats.write.mode("overwrite").parquet(str(DATA_PROCESSED / "cluster_stock_stats.parquet"))
     print(f"saved best model (k={best_k}) to {out_path}")
+
+    write_results(
+        "clustering_results",
+        {
+            "best_k": best_k,
+            "val_silhouette": float(best_val_sil),
+            "test_silhouette": float(test_sil),
+            "clusters": [
+                {k: (float(v) if isinstance(v, float) else v) for k, v in r.asDict().items()}
+                for r in cluster_rows
+            ],
+        },
+    )
 
     spark.stop()
     return best_k, test_sil

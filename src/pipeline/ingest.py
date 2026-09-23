@@ -6,15 +6,11 @@ duplicate rows, and writes cleaned Parquet to data/processed/ partitioned by
 stock_id so downstream feature engineering can read a single clean source.
 """
 
-from pathlib import Path
-
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 
 from spark_session import get_spark
-
-DATA_RAW = Path(__file__).resolve().parents[2] / "data" / "raw"
-DATA_PROCESSED = Path(__file__).resolve().parents[2] / "data" / "processed"
+from paths import DATA_RAW, DATA_PROCESSED, ensure_dir
 
 
 def load_book(spark: SparkSession) -> DataFrame:
@@ -110,7 +106,7 @@ def run(write_output: bool = True):
     labels_clean = clean_labels(labels)
 
     if write_output:
-        DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
+        ensure_dir(DATA_PROCESSED)
         book_clean.write.mode("overwrite").partitionBy("stock_id").parquet(
             str(DATA_PROCESSED / "book_clean.parquet")
         )

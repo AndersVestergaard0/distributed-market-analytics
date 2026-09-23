@@ -22,9 +22,8 @@ from pyspark.sql import functions as F
 
 sys.path.append(str(Path(__file__).resolve().parents[1] / "pipeline"))
 from spark_session import get_spark  # noqa: E402
-
-DATA_PROCESSED = Path(__file__).resolve().parents[2] / "data" / "processed"
-MODELS_DIR = Path(__file__).resolve().parents[2] / "data" / "models"
+from paths import DATA_PROCESSED, MODELS_DIR, ensure_dir  # noqa: E402
+from mongo_export import write_results  # noqa: E402
 
 FEATURE_COLS = [
     "avg_spread_bps",
@@ -69,15 +68,20 @@ def evaluate(model, df, name):
     return {"accuracy": accuracy, "f1": f1}, pred
 
 
-def print_confusion_matrix(model, pred):
+def confusion_matrix(model, pred):
     labels = model.stages[0].labels  # StringIndexer label order
     to_label = IndexToString(inputCol="prediction", outputCol="predicted_label", labels=labels)
     pred = to_label.transform(pred)
 
-    print("\n  Confusion matrix (rows=actual, cols=predicted):")
-    pred.groupBy("direction_label").pivot("predicted_label", labels).count().orderBy(
-        "direction_label"
-    ).show()
+    rows = (
+        pred.groupBy("direction_label")
+        .pivot("predicted_label", labels)
+        .count()
+        .fillna(0)
+        .orderBy("direction_label")
+        .collect()
+    )
+    return {r["direction_label"]: {c: r[c] for c in labels} for r in rows}
 
 
 def run():
@@ -116,12 +120,37 @@ def run():
 
     print(f"Final test-set evaluation for {best_name}:")
     test_scores, test_pred = evaluate(fitted[best_name], test, "test")
-    print_confusion_matrix(fitted[best_name], test_pred)
+    cm = confusion_matrix(fitted[best_name], test_pred)
+    print("\n  Confusion matrix (rows=actual, cols=predicted):")
+    for actual, row in cm.items():
+        print(f"    {actual}: {row}")
 
-    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    ensure_dir(MODELS_DIR)
     out_path = MODELS_DIR / "classification_best"
     fitted[best_name].write().overwrite().save(str(out_path))
     print(f"\nsaved best model ({best_name}) to {out_path}")
+
+    final_stage = fitted[best_name].stages[-1]
+    importances = None
+    if hasattr(final_stage, "featureImportances"):
+        importances = {
+            col: float(val)
+            for col, val in sorted(
+                zip(FEATURE_COLS, final_stage.featureImportances.toArray()),
+                key=lambda x: -x[1],
+            )
+        }
+
+    write_results(
+        "classification_results",
+        {
+            "best_model": best_name,
+            "val_scores": {name: {k: float(v) for k, v in s.items()} for name, s in val_scores.items()},
+            "test_scores": {k: float(v) for k, v in test_scores.items()},
+            "confusion_matrix": cm,
+            "feature_importances": importances,
+        },
+    )
 
     spark.stop()
     return best_name, test_scores

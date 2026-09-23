@@ -24,9 +24,9 @@ from pyspark.sql import functions as F
 
 sys.path.append(str(Path(__file__).resolve().parents[1] / "pipeline"))
 from spark_session import get_spark  # noqa: E402
+from paths import MODELS_DIR, ensure_dir  # noqa: E402
+from mongo_export import write_results  # noqa: E402
 from regression import DATA_PROCESSED, load_split  # noqa: E402
-
-MODELS_DIR = Path(__file__).resolve().parents[2] / "data" / "models"
 
 # Subset of engineered features to mine over, plus the prediction target
 # itself (binned) so rules can surface conditions associated with an
@@ -109,6 +109,7 @@ def run():
 
     print("\nValidating top rules on the held-out test split:")
     test_n = test_items.count()
+    validated_rules = []
     for r in top_rules:
         antecedent = list(r["antecedent"])
         cond = None
@@ -124,12 +125,31 @@ def run():
             f"train: support={r['support']:.4f} confidence={r['confidence']:.4f} lift={r['lift']:.4f} | "
             f"test: support={test_support:.4f} confidence={test_confidence:.4f}"
         )
+        validated_rules.append({
+            "antecedent": antecedent,
+            "train_support": float(r["support"]),
+            "train_confidence": float(r["confidence"]),
+            "train_lift": float(r["lift"]),
+            "test_support": float(test_support),
+            "test_confidence": float(test_confidence),
+        })
 
-    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    ensure_dir(MODELS_DIR)
     out_path = MODELS_DIR / "association_rules_best"
     model.write().overwrite().save(str(out_path))
     rules.write.mode("overwrite").parquet(str(DATA_PROCESSED / "association_rules.parquet"))
     print(f"\nsaved model to {out_path}")
+
+    write_results(
+        "association_rules_results",
+        {
+            "num_frequent_itemsets": model.freqItemsets.count(),
+            "num_rules": rules.count(),
+            "min_support": MIN_SUPPORT,
+            "min_confidence": MIN_CONFIDENCE,
+            "top_rules_predicting_high_volatility": validated_rules,
+        },
+    )
 
     spark.stop()
 
