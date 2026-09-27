@@ -10,7 +10,7 @@ given time_id entirely to one split.
 from pathlib import Path
 import sys
 
-from pyspark.sql import functions as F
+from pyspark.sql import Window, functions as F
 
 sys.path.append(str(Path(__file__).resolve().parents[1] / "pipeline"))
 from spark_session import get_spark  # noqa: E402
@@ -20,6 +20,29 @@ TRAIN_FRAC = 0.70
 VAL_FRAC = 0.15
 TEST_FRAC = 0.15
 SEED = 42
+
+N_FOLDS = 5
+
+
+def write_time_id_folds(spark, features, k=N_FOLDS):
+    """Bin distinct time_ids into k *consecutive, time-ordered* folds.
+
+    Unlike the random train/val/test split above, walk-forward evaluation
+    needs folds that respect chronological order (fold i is trained on all
+    time_ids before it, not a random subset) - so this orders time_id
+    ascending and buckets by rank, rather than randomSplit.
+    """
+    time_ids = features.select("time_id").distinct()
+    ordered = Window.orderBy("time_id")
+    folded = time_ids.withColumn("fold", F.ntile(k).over(ordered) - 1)
+
+    counts = folded.groupBy("fold").count().orderBy("fold").collect()
+    print("Walk-forward fold sizes (distinct time_ids):")
+    for r in counts:
+        print(f"  fold {r['fold']}: {r['count']:,}")
+
+    folded.write.mode("overwrite").parquet(str(DATA_PROCESSED / "time_id_folds.parquet"))
+    print("wrote time_id_folds.parquet")
 
 
 def run():
@@ -71,6 +94,8 @@ def run():
             str(DATA_PROCESSED / f"{name}.parquet")
         )
         print(f"wrote {name}.parquet")
+
+    write_time_id_folds(spark, features)
 
     spark.stop()
 
