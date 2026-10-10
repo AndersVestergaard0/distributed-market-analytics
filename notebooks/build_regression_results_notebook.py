@@ -166,9 +166,9 @@ notebook (same reason the main model isn't retrained here) — these numbers
 are that run's output.""")
 
 code("""ablation_results = pd.DataFrame([
-    {"ablation": "full feature set", "test_rmspe": 0.2826, "delta_vs_full": 0.0000},
-    {"ablation": "without OFI (total_ofi, avg_ofi)", "test_rmspe": 0.2808, "delta_vs_full": -0.0017},
-    {"ablation": "without spread/micro-price", "test_rmspe": 0.3044, "delta_vs_full": 0.0218},
+    {"ablation": "full feature set", "test_rmspe": 0.2811, "delta_vs_full": 0.0000},
+    {"ablation": "without OFI (total_ofi, avg_ofi)", "test_rmspe": 0.2802, "delta_vs_full": -0.0009},
+    {"ablation": "without spread/micro-price", "test_rmspe": 0.3037, "delta_vs_full": 0.0226},
 ]).set_index("ablation")
 
 plt.figure(figsize=(7, 3.5))
@@ -191,7 +191,7 @@ evaluates on fold *i* only (proper walk-forward, never trains on the future)
 — fold 0 has no prior data so it's warm-up-only, giving 4 independent
 readings. Numbers below are that run's output.""")
 
-code("""fold_rmspe = pd.Series([0.2876, 0.2805, 0.2949, 0.2988], index=[1, 2, 3, 4], name="rmspe")
+code("""fold_rmspe = pd.Series([0.2865, 0.2785, 0.3031, 0.2968], index=[1, 2, 3, 4], name="rmspe")
 mean_rmspe, std_rmspe = fold_rmspe.mean(), fold_rmspe.std()
 
 plt.figure(figsize=(7, 4))
@@ -209,26 +209,26 @@ print(f"RMSPE across folds: mean={mean_rmspe:.4f}  std={std_rmspe:.4f}")""")
 
 md("""## Takeaways
 
-- **`realized_vol_book` dominates** (~52% importance) — confirms the volatility
+- **`realized_vol_book` dominates** (~51% importance) — confirms the volatility
   clustering pattern found in the EDA (r=0.80 between current- and
   next-window volatility): past turbulence is the single strongest predictor
   of future turbulence.
-- **`avg_spread_bps` is second** (~22%) — a wider spread reflects market-maker
+- **`avg_spread_bps` is second** (~24%) — a wider spread reflects market-maker
   uncertainty, itself informative about coming volatility. The ablation
   confirms this is real signal, not noise: dropping it raises test RMSPE by
-  +0.0218 (from 0.2826 to 0.3044).
+  +0.0226 (from 0.2811 to 0.3037).
 - **OFI (`total_ofi`/`avg_ofi`) contributes almost nothing here** (<0.2%
   combined feature importance), and the ablation confirms it: removing OFI
-  entirely *lowers* test RMSPE slightly (-0.0017) — the model isn't relying
+  entirely *lowers* test RMSPE slightly (-0.0009) — the model isn't relying
   on it at all. Expected, since OFI is a *directional* signal (predicts price
   movement direction), not a *volatility* signal — it should matter far more
   in the classification (trade direction) task.
-- The GBT model beats the naive persistence baseline by **+22.8%** RMSPE on
+- The GBT model beats the naive persistence baseline by **+23.2%** RMSPE on
   the test set, and a Diebold-Mariano test confirms that improvement is
-  statistically significant (p≈0.0000), not a lucky point estimate.
+  statistically significant (DM=-14.72, p≈0.0000), not a lucky point estimate.
 - Walk-forward evaluation across 4 out-of-sample folds gives RMSPE =
-  0.2876 / 0.2805 / 0.2949 / 0.2988 (mean 0.2905, std 0.0081) — tightly
-  clustered around the static test RMSPE of 0.2826, so the headline number
+  0.2865 / 0.2785 / 0.3031 / 0.2968 (mean 0.2912, std 0.0109) — tightly
+  clustered around the static test RMSPE of 0.2811, so the headline number
   isn't a lucky split; error is stable across the dataset.
 - Predicted-vs-actual points track the y=x line reasonably closely on the
   log-log plot, and residuals are centered near zero with no strong skew
