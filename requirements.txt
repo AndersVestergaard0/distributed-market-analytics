@@ -3,6 +3,8 @@ pandas
 pyarrow
 matplotlib
 seaborn
+scikit-learn
 jupyter
 kaggle
 pymongo
+pytest
