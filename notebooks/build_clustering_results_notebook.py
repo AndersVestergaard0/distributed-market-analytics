@@ -115,7 +115,7 @@ code("""sample_pd = test_pred.select("cluster", *describe_cols).sample(fraction=
 
 fig, axes = plt.subplots(1, len(describe_cols), figsize=(4 * len(describe_cols), 4.5))
 for ax, col in zip(axes, describe_cols):
-    sns.boxplot(data=sample_pd, x="cluster", y=col, hue="cluster", palette=colors, legend=False, ax=ax, showfliers=False)
+    sns.boxplot(data=sample_pd, x="cluster", y=col, palette=colors, ax=ax, showfliers=False)
     ax.set_title(col)
     ax.set_xlabel("Cluster")
 plt.tight_layout()
