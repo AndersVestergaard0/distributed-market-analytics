@@ -78,9 +78,17 @@ db.getSiblingDB('market_analytics').createUser({
   roles: [{ role: 'readWrite', db: 'market_analytics' }]
 });" || true
 
+# clusterMonitor + read on admin are required for mongo-express's own
+# dashboard (it calls serverStatus/listCollections on admin on every page
+# load) - without them every request hangs/500s even though the market_analytics
+# read role alone is otherwise sufficient for browsing collections.
 docker exec mongo mongosh -u admin -p "$ROOT_PW" --authenticationDatabase admin --eval "
 db.getSiblingDB('market_analytics').createUser({
   user: 'public_reader',
   pwd: '$READER_PW',
-  roles: [{ role: 'read', db: 'market_analytics' }]
+  roles: [
+    { role: 'read', db: 'market_analytics' },
+    { role: 'clusterMonitor', db: 'admin' },
+    { role: 'read', db: 'admin' }
+  ]
 });" || true
