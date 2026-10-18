@@ -1,4 +1,4 @@
-# GCP Deployment — Setup Commands
+# GCP Deployment - Setup Commands
 
 Full command reference for deploying this project to Google Cloud:
 **GCS** (data lake) → **Dataproc** (Spark compute, run as a one-click
@@ -8,13 +8,13 @@ Gateway** (visualization).
 
 Run everything below yourself from a terminal with `gcloud` installed and
 authenticated (`gcloud init` / `gcloud auth login`). Once the Workflow Template exists (Part 4), the
-whole pipeline re-runs from the Console with a single click — no further
-CLI needed — which is the point of Part 4.
+whole pipeline re-runs from the Console with a single click - no further
+CLI needed - which is the point of Part 4.
 
 ## Running this from Cloud Shell
 
 Every command below also runs unmodified in **Cloud Shell** (the `>_` icon
-in the top-right of the GCP Console) — it ships with `gcloud`, `gsutil`,
+in the top-right of the GCP Console) - it ships with `gcloud`, `gsutil`,
 `docker`, and `zip` preinstalled and already authenticated as you, so it's
 the easiest way to do this setup if you don't have `gcloud` installed
 locally:
@@ -25,7 +25,7 @@ cd distributed-market-analytics
 ```
 
 Cloud Shell's persistent home directory is capped at 5GB, so don't upload
-`data/raw` (2.5GB) from your laptop through the Console's file picker —
+`data/raw` (2.5GB) from your laptop through the Console's file picker -
 instead re-download it straight from Kaggle inside Cloud Shell, the same way
 it was first fetched locally:
 
@@ -38,7 +38,7 @@ pip install --user kaggle
 ```
 
 Then continue from Part 1 below. **This download/upload step (Part 1) only
-needs to happen once**, done by you — see "Access for your teacher" at the
+needs to happen once**, done by you - see "Access for your teacher" at the
 end of this doc for why they don't need to repeat it.
 
 ---
@@ -48,8 +48,8 @@ end of this doc for why they don't need to repeat it.
 Set these once per terminal session; every command below reuses them.
 
 ```bash
-export PROJECT_ID="cloud-computing-course-uq"
-export REGION="australia-southeast1"
+export PROJECT_ID="your-gcp-project-id"  # an existing project, or create one at console.cloud.google.com/projectcreate
+export REGION="australia-southeast1"     # any Dataproc-supported region; pick whatever's closest to you
 export ZONE="australia-southeast1-b"
 export BUCKET="${PROJECT_ID}-market-analytics"
 export CLUSTER_JUPYTER="market-analytics-jupyter"
@@ -72,12 +72,12 @@ gcloud services enable dataproc.googleapis.com compute.googleapis.com storage.go
 
 ---
 
-## 1. GCS — data lake
+## 1. GCS - data lake
 
 ```bash
 gsutil mb -l "$REGION" "gs://$BUCKET"
 
-# raw data only — processed/models are written by the pipeline itself
+# raw data only - processed/models are written by the pipeline itself
 gsutil -m rsync -r data/raw "gs://$BUCKET/data/raw"
 
 # pipeline code, flattened into one importable zip (see note below)
@@ -106,18 +106,18 @@ gsutil cp init-pip-install.sh "gs://$BUCKET/code/init-pip-install.sh"
 > FEATURE_COLS`, ...). Flattening `pipeline/`, `features/`, `models/` into one
 > zip root and passing it as `--py-files` on every job submission (Part 3/4)
 > puts all of them on `PYTHONPATH` together, so those imports resolve exactly
-> as they do locally — no code changes needed for the cloud.
+> as they do locally - no code changes needed for the cloud.
 
 ---
 
-## 2. MongoDB — GCE VM (same docker-compose pattern as Practical 7)
+## 2. MongoDB - GCE VM (same docker-compose pattern as Practical 7)
 
 The VM boots with [`deploy/mongo-startup.sh`](deploy/mongo-startup.sh), which
 installs Docker and brings up `mongo` + `mongo-express` with auth enabled: a
 `writer` user (read/write, used by the Dataproc jobs in Part 3) and a
 `public_reader` user (read-only, the *only* credential mongo-express itself
 holds). Because mongo-express can't do anything but read no matter what a
-visitor clicks, its port is safe to open to the public internet — that's
+visitor clicks, its port is safe to open to the public internet - that's
 what lets you link the results dashboard straight from the README for your
 teacher/reviewers without granting anyone GCP access.
 
@@ -139,8 +139,7 @@ gcloud compute firewall-rules create allow-mongo-internal \
   --rules=tcp:27017 --source-ranges=10.128.0.0/9
 
 # mongo-express web UI (8081) - public and read-only (see above), so anyone
-# with the link - your teacher, a recruiter - can browse results with zero
-# GCP access needed
+# with the link can browse results without GCP access
 gcloud compute firewall-rules create allow-mongo-express \
   --network=default --direction=INGRESS --action=ALLOW \
   --rules=tcp:8081 --source-ranges=0.0.0.0/0
@@ -152,19 +151,19 @@ echo "mongo-express (public, read-only): http://$MONGO_EXTERNAL_IP:8081"
 ```
 
 > **Note:** `MONGO_EXTERNAL_IP` changes if the VM is ever deleted and
-> recreated — update the link in your README when that happens (it stays
+> recreated - update the link in your README when that happens (it stays
 > fixed across simple reboots).
 
 ---
 
-## 3. Dataproc — initialization action for pymongo/scikit-learn
+## 3. Dataproc - initialization action for pymongo/scikit-learn
 
 Both Dataproc cluster commands below (interactive cluster in Part 5, managed
 cluster in the Workflow Template in Part 4) install `pymongo` and
 `scikit-learn` on every node via the tiny self-hosted init script uploaded in
 Part 1 (`gs://$BUCKET/code/init-pip-install.sh`), and get `DATA_ROOT` /
 `MONGO_URI` wired in as cluster-wide env vars via the `spark-env:` properties
-prefix — this is what lets `src/pipeline/paths.py` and
+prefix - this is what lets `src/pipeline/paths.py` and
 `src/pipeline/mongo_export.py` switch from local to cloud with zero code
 changes.
 
@@ -175,12 +174,12 @@ export CLUSTER_PROPERTIES="spark-env:DATA_ROOT=gs://$BUCKET/data,spark-env:MONGO
 
 ---
 
-## 4. Dataproc Workflow Template — the one-click pipeline run
+## 4. Dataproc Workflow Template - the one-click pipeline run
 
 This is the artifact that makes the whole pipeline re-runnable from the
 Console with a single "Run" click (Dataproc → Workflow Templates →
 `market-analytics-pipeline` → Run): it provisions its own cluster, runs all
-7 jobs in dependency order, and deletes the cluster when done — so nothing
+7 jobs in dependency order, and deletes the cluster when done - so nothing
 sits around costing money between runs.
 
 ```bash
@@ -233,7 +232,7 @@ gcloud dataproc workflow-templates add-job pyspark "gs://$BUCKET/code/classifica
   --py-files="gs://$BUCKET/code/code.zip" --start-after=direction_labels
 ```
 
-Run it (also doable from the Console — Dataproc → Workflow Templates → Run):
+Run it (also doable from the Console - Dataproc → Workflow Templates → Run):
 
 ```bash
 gcloud dataproc workflow-templates instantiate market-analytics-pipeline --region="$REGION"
@@ -241,21 +240,21 @@ gcloud dataproc workflow-templates instantiate market-analytics-pipeline --regio
 
 ---
 
-## 5. Interactive Dataproc cluster — Jupyter via Component Gateway
+## 5. Interactive Dataproc cluster - Jupyter via Component Gateway
 
 A second, separate cluster purely for browsing results interactively
 afterwards (the workflow template's cluster above is ephemeral and deletes
-itself). Create it when needed, delete it when not — it's billed by the hour.
+itself). Create it when needed, delete it when not - it's billed by the hour.
 
 > **Trial-account disk quota**: a project on a free-trial/course quota may
 > only have ~1000GB of persistent-disk quota in the region, while Dataproc's
 > default boot disk is 1000GB *per node* (3000GB for 1 master + 2 workers).
 > Spark reads/writes data via GCS, not local disk, so the boot disk only
-> needs to hold the OS/Spark install + shuffle spill — `--master-boot-disk-size`
+> needs to hold the OS/Spark install + shuffle spill - `--master-boot-disk-size`
 > / `--worker-boot-disk-size` below shrink it to 50GB/node (150GB total) to
 > stay well under quota. If a cluster creation half-fails on quota, delete it
 > before retrying (`gcloud dataproc clusters delete "$CLUSTER_JUPYTER"
-> --region="$REGION" --quiet`) — a failed attempt can still leave the cluster
+> --region="$REGION" --quiet`) - a failed attempt can still leave the cluster
 > name registered, which then errors with `ALREADY_EXISTS` on retry.
 
 ```bash
@@ -280,7 +279,7 @@ gcloud dataproc clusters describe "$CLUSTER_JUPYTER" --region="$REGION" \
 ```
 
 Open that link, then use JupyterLab's GCS browser panel to open notebooks
-directly from `gs://$BUCKET/notebooks/` — no manual download/upload needed.
+directly from `gs://$BUCKET/notebooks/` - no manual download/upload needed.
 
 Delete it after use:
 
@@ -300,7 +299,7 @@ gsutil -m rm -r "gs://$BUCKET"
 ```
 
 (The workflow template's managed cluster deletes itself automatically after
-each run — nothing to clean up there. The template definition itself costs
+each run - nothing to clean up there. The template definition itself costs
 nothing to leave in place; delete it with
 `gcloud dataproc workflow-templates delete market-analytics-pipeline --region="$REGION" --quiet`
 if you want it gone too.)
@@ -309,7 +308,7 @@ if you want it gone too.)
 
 ## Access for your teacher
 
-The simplest path needs **zero GCP access** — see the README's "For my
+The simplest path needs **zero GCP access** - see the README's "For my
 teacher / reviewers" section: the results notebooks are committed to the
 repo with their outputs baked in (GitHub renders `.ipynb` natively), and
 `http://$MONGO_EXTERNAL_IP:8081` (mongo-express, Part 2) is public and
@@ -321,13 +320,13 @@ the interactive JupyterLab cluster (Part 5) rather than the notebooks as
 committed, they'll need access to your GCP project, granted from
 **IAM & Admin → IAM → Grant Access** in the Console:
 
-- `roles/dataproc.editor` — lets them open Workflow Templates and click Run,
+- `roles/dataproc.editor` - lets them open Workflow Templates and click Run,
   and open the Jupyter cluster's Component Gateway link.
-- `roles/storage.objectViewer` — lets them browse `gs://$BUCKET` (code, data,
+- `roles/storage.objectViewer` - lets them browse `gs://$BUCKET` (code, data,
   notebooks) in the Console.
 
 With that, from the Console they can open **Dataproc → Workflow Templates →
 market-analytics-pipeline → Run** to execute the whole pipeline from
-scratch, or open the `$CLUSTER_JUPYTER` cluster's JupyterLab link (Part 5) —
+scratch, or open the `$CLUSTER_JUPYTER` cluster's JupyterLab link (Part 5) -
 note that cluster isn't left running by default (it's billed hourly), so
 you'd need to create it first (Part 5) before sharing that link.
