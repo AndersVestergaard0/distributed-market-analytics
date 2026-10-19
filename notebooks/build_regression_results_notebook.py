@@ -9,12 +9,12 @@ def md(text):
 def code(text):
     cells.append(nbf.v4.new_code_cell(text))
 
-md("""# Regression Results — Realized Volatility Forecasting
+md("""# Regression Results - Realized Volatility Forecasting
 
-INFS3208 Individual Project — Distributed Market Analytics
+INFS3208 Individual Project - Distributed Market Analytics
 
 Loads the GBTRegressor model already trained and saved by
-`src/models/regression.py` (training happens there, not here — this notebook
+`src/models/regression.py` (training happens there, not here - this notebook
 is the visualisation/results layer, since re-running Spark ML training on
 167M raw rows from inside a notebook on every edit would be slow and hard to
 version control).""")
@@ -68,10 +68,10 @@ for split_name in ["train", "val", "test"]:
 metrics_table = pd.DataFrame(rows).set_index("split")
 metrics_table""")
 
-md("""## 2. Predicted vs. actual — test set
+md("""## 2. Predicted vs. actual - test set
 
 The closer points sit to the y=x line, the better. Plotted on log scale since
-volatility spans multiple orders of magnitude — the same absolute distance
+volatility spans multiple orders of magnitude - the same absolute distance
 from the line means very different things at low vs. high volatility, so a
 linear-scale plot would visually hide most of the structure.""")
 
@@ -125,7 +125,7 @@ A bare RMSPE number is meaningless without an anchor. This compares the
 loaded GBT model against the naive persistence baseline (forecast next-window
 volatility as the current window's `realized_vol_book`) and runs a
 Diebold-Mariano test on the paired per-`time_id` loss series to confirm the
-improvement isn't just noise — both computed by re-using the predictions
+improvement isn't just noise - both computed by re-using the predictions
 already produced by `model.transform()` above, no retraining involved.""")
 
 code("""from regression import naive_rmspe, time_id_sq_pct_err
@@ -162,7 +162,7 @@ Re-fits the same GBT architecture with a feature group removed, to test
 whether OFI and spread/micro-price actually matter for forecasting
 volatility rather than just assuming it from the narrative. Retraining two
 extra models is done by `python src/models/ablation.py`, not inside this
-notebook (same reason the main model isn't retrained here) — these numbers
+notebook (same reason the main model isn't retrained here) - these numbers
 are that run's output.""")
 
 code("""ablation_results = pd.DataFrame([
@@ -188,7 +188,7 @@ stable result. `python src/models/split.py` bins the 3,830 distinct
 `time_id`s into 5 consecutive chronological folds; `python
 src/models/walk_forward.py` trains fold *i* on every `time_id` before it and
 evaluates on fold *i* only (proper walk-forward, never trains on the future)
-— fold 0 has no prior data so it's warm-up-only, giving 4 independent
+- fold 0 has no prior data so it's warm-up-only, giving 4 independent
 readings. Numbers below are that run's output.""")
 
 code("""fold_rmspe = pd.Series([0.2865, 0.2785, 0.3031, 0.2968], index=[1, 2, 3, 4], name="rmspe")
@@ -209,30 +209,30 @@ print(f"RMSPE across folds: mean={mean_rmspe:.4f}  std={std_rmspe:.4f}")""")
 
 md("""## Takeaways
 
-- **`realized_vol_book` dominates** (~51% importance) — confirms the volatility
+- **`realized_vol_book` dominates** (~51% importance) - confirms the volatility
   clustering pattern found in the EDA (r=0.80 between current- and
   next-window volatility): past turbulence is the single strongest predictor
   of future turbulence.
-- **`avg_spread_bps` is second** (~24%) — a wider spread reflects market-maker
+- **`avg_spread_bps` is second** (~24%) - a wider spread reflects market-maker
   uncertainty, itself informative about coming volatility. The ablation
   confirms this is real signal, not noise: dropping it raises test RMSPE by
   +0.0226 (from 0.2811 to 0.3037).
 - **OFI (`total_ofi`/`avg_ofi`) contributes almost nothing here** (<0.2%
   combined feature importance), and the ablation confirms it: removing OFI
-  entirely *lowers* test RMSPE slightly (-0.0009) — the model isn't relying
+  entirely *lowers* test RMSPE slightly (-0.0009) - the model isn't relying
   on it at all. Expected, since OFI is a *directional* signal (predicts price
-  movement direction), not a *volatility* signal — it should matter far more
+  movement direction), not a *volatility* signal - it should matter far more
   in the classification (trade direction) task.
 - The GBT model beats the naive persistence baseline by **+23.2%** RMSPE on
   the test set, and a Diebold-Mariano test confirms that improvement is
   statistically significant (DM=-14.72, p≈0.0000), not a lucky point estimate.
 - Walk-forward evaluation across 4 out-of-sample folds gives RMSPE =
-  0.2865 / 0.2785 / 0.3031 / 0.2968 (mean 0.2912, std 0.0109) — tightly
+  0.2865 / 0.2785 / 0.3031 / 0.2968 (mean 0.2912, std 0.0109) - tightly
   clustered around the static test RMSPE of 0.2811, so the headline number
   isn't a lucky split; error is stable across the dataset.
 - Predicted-vs-actual points track the y=x line reasonably closely on the
   log-log plot, and residuals are centered near zero with no strong skew
-  remaining — consistent with the test R²=0.82 / RMSPE≈28% reported by the
+  remaining - consistent with the test R²=0.82 / RMSPE≈28% reported by the
   training script.""")
 
 code("""spark.stop()""")

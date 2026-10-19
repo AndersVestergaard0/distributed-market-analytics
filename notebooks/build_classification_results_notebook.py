@@ -9,14 +9,14 @@ def md(text):
 def code(text):
     cells.append(nbf.v4.new_code_cell(text))
 
-md("""# Classification Results — Trade Direction (Down / Flat / Up)
+md("""# Classification Results - Trade Direction (Down / Flat / Up)
 
-INFS3208 Individual Project — Distributed Market Analytics
+INFS3208 Individual Project - Distributed Market Analytics
 
 Loads the RandomForestClassifier model already trained and saved by
 `src/models/classification.py`. Predictors come from the first half of each
 10-minute window (`seconds_in_bucket < 300`); the label is the direction of
-the mid-price move in the second half — see `src/features/direction_labels.py`
+the mid-price move in the second half - see `src/features/direction_labels.py`
 for why a "next window" label (as used in the regression task) was not
 valid here (time_id ordering is anonymised, not chronological).""")
 
@@ -49,7 +49,7 @@ print("Label order (index -> class):", list(enumerate(label_order)))""")
 
 md("""## 1. Metrics across all three splits
 
-With three roughly-balanced classes, random guessing scores ~33.3% accuracy —
+With three roughly-balanced classes, random guessing scores ~33.3% accuracy -
 this is the baseline every result below should be read against.""")
 
 code("""def evaluate_split(name):
@@ -70,7 +70,7 @@ metrics_table = pd.DataFrame(rows).set_index("split")
 metrics_table["vs_random_baseline"] = metrics_table["accuracy"] - (1 / 3)
 metrics_table""")
 
-md("""## 2. Confusion matrix — test set
+md("""## 2. Confusion matrix - test set
 
 Rows are the true direction, columns are the predicted direction. A perfect
 classifier would have all its mass on the diagonal; a classifier with no
@@ -106,7 +106,7 @@ md("""## 3. Feature importance
 
 Which early-window features the Random Forest relies on to guess direction.
 Compare this to the regression task's feature importances (dominated by
-`realized_vol_book` and `avg_spread_bps`) — a different ranking here would
+`realized_vol_book` and `avg_spread_bps`) - a different ranking here would
 indicate the model is picking up on genuinely different signal for
 direction vs. volatility, not just reusing the same pattern.""")
 
@@ -145,7 +145,7 @@ balance""")
 
 md("""## Takeaways
 
-- **Test accuracy 42.7%, weighted F1 0.41** — meaningfully above the 33.3%
+- **Test accuracy 42.7%, weighted F1 0.41** - meaningfully above the 33.3%
   random baseline for 3 balanced classes, but far from strong. This is a
   genuine, expected result: short-horizon price *direction* is famously
   close to a random walk (the intuition behind weak-form market
@@ -153,7 +153,7 @@ md("""## Takeaways
   highly predictable (R²=0.82). The contrast between the two tasks is
   itself a finding worth stating explicitly.
 - **The model is biased toward predicting "flat"** (see the confusion
-  matrix) rather than confidently calling direction — consistent with weak,
+  matrix) rather than confidently calling direction - consistent with weak,
   noisy signal rather than a strong directional edge.
 - Feature importances here should be compared against the regression task's
   ranking to see whether direction prediction leans on different signals

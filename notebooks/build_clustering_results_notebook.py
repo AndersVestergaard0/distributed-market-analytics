@@ -9,16 +9,16 @@ def md(text):
 def code(text):
     cells.append(nbf.v4.new_code_cell(text))
 
-md("""# Clustering Results — Volatility Regime Grouping (K-Means)
+md("""# Clustering Results - Volatility Regime Grouping (K-Means)
 
-INFS3208 Individual Project — Distributed Market Analytics
+INFS3208 Individual Project - Distributed Market Analytics
 
 Loads the K-Means model already trained and saved by `src/models/clustering.py`.
 Each window's features are z-scored **per stock** (mean/std fit on train only,
 via `cluster_stock_stats.parquet`) before clustering, so a cluster means
 "unusually calm/volatile *for this stock*", comparable across all 112 stocks
 rather than just re-discovering which stock is which. This task is
-unsupervised — `target` (next-window realized volatility) is never used to
+unsupervised - `target` (next-window realized volatility) is never used to
 fit the model, only afterwards to help interpret what each cluster means.""")
 
 code("""import sys
@@ -74,7 +74,7 @@ for split_name in ["train", "val", "test"]:
 metrics_table = pd.DataFrame(rows).set_index("split")
 metrics_table""")
 
-md("""## 2. Cluster sizes and interpretation — test set
+md("""## 2. Cluster sizes and interpretation - test set
 
 Same interpretation table as the training run, computed fresh here: cluster
 counts and the average of a few original-unit (not z-scored) features per
@@ -149,13 +149,13 @@ md("""## Takeaways
 
 - **k=2 was selected on validation silhouette (0.629), well ahead of k=3/4/5
   (0.35/0.32/0.25)**, and the test silhouette (0.618) confirms it
-  generalizes — the dominant structure in this feature space is a clean
+  generalizes - the dominant structure in this feature space is a clean
   two-way split, not several fine-grained regimes.
 - **Cluster 0 ("calm", ~85% of windows)**: low realized volatility, tight
   spreads (~5.5 bps), modest trade volume.
   **Cluster 1 ("stressed", ~15% of windows)**: ~2.7x higher realized
   volatility, ~2x wider spreads, ~3.2x more trade volume, and higher average
-  next-window target — a textbook market-microstructure result where
+  next-window target - a textbook market-microstructure result where
   liquidity dries up (spreads widen) exactly when volatility and trading
   activity spike.
 - This is unsupervised: `target` was never used to fit K-Means, only shown
@@ -163,7 +163,7 @@ md("""## Takeaways
   "stressed" cluster also has the higher average next-window volatility
   target is an independent sanity check that the clusters correspond to a
   real, persistent regime rather than an artifact.
-- Per-stock z-scoring (fit on train only) was the key design choice here —
+- Per-stock z-scoring (fit on train only) was the key design choice here -
   without it, clusters risk mostly encoding "which stock is this" given the
   large baseline volatility differences across the 112 stocks seen in the
   EDA.""")

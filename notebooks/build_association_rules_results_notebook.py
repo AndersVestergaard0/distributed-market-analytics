@@ -9,14 +9,14 @@ def md(text):
 def code(text):
     cells.append(nbf.v4.new_code_cell(text))
 
-md("""# Association Rule Mining Results — Conditions Preceding High Volatility (FP-Growth)
+md("""# Association Rule Mining Results - Conditions Preceding High Volatility (FP-Growth)
 
-INFS3208 Individual Project — Distributed Market Analytics
+INFS3208 Individual Project - Distributed Market Analytics
 
 Loads the FP-Growth model already trained and saved by
 `src/models/association_rules.py`. Each engineered feature is discretized
 into low/mid/high tertile bins (edges fit on the train split only), and each
-window becomes a "transaction" — a set of items such as
+window becomes a "transaction" - a set of items such as
 `{avg_spread_bps=high, realized_vol_book=high, target=high}`. FP-Growth then
 mines frequent itemsets and rules over these transactions.
 
@@ -56,7 +56,7 @@ print("Loaded FPGrowth model | minSupport =", MIN_SUPPORT, "| minConfidence =", 
 
 md("""## 1. Tertile bin edges
 
-Recomputed here from the train split for reference — these are the exact
+Recomputed here from the train split for reference - these are the exact
 thresholds ("low" / "mid" / "high") each feature was discretized into
 before mining.""")
 
@@ -90,7 +90,7 @@ md("""## 3. Rules predicting an upcoming high-volatility window
 
 All mined rules whose consequent is `target=high`, sorted by confidence.
 **Lift** > 1 means the antecedent condition makes `target=high` more likely
-than its base rate (roughly 1/3 under tertile bins) — a lift of ~2.8 means
+than its base rate (roughly 1/3 under tertile bins) - a lift of ~2.8 means
 the rule roughly triples the odds.""")
 
 code("""vol_rules = (
@@ -106,7 +106,7 @@ vol_rules_pd[["antecedent", "consequent", "support", "confidence", "lift"]]""")
 md("""## 4. Confidence vs. lift across all `target=high` rules
 
 Point size encodes support (how common the antecedent condition is). Rules
-in the upper-right — high confidence *and* high lift — are both reliable and
+in the upper-right - high confidence *and* high lift - are both reliable and
 meaningfully better than chance.""")
 
 code("""all_vol_rules_pd = vol_rules.toPandas()
@@ -162,20 +162,20 @@ ax.bar([i + width / 2 for i in x], validation_table["test_confidence"], width, l
 ax.set_xticks(list(x))
 ax.set_xticklabels([f"rule {i+1}" for i in x])
 ax.set_ylabel("Confidence")
-ax.set_title("Train vs. test confidence — top 5 rules predicting target=high")
+ax.set_title("Train vs. test confidence - top 5 rules predicting target=high")
 ax.legend()
 plt.tight_layout()
 plt.show()""")
 
 md("""## Takeaways
 
-- The strongest rule — `{realized_vol_book=high, avg_spread_bps=high,
-  trade_count=high} → {target=high}` — holds **95.8% confidence on train and
+- The strongest rule - `{realized_vol_book=high, avg_spread_bps=high,
+  trade_count=high} → {target=high}` - holds **95.8% confidence on train and
   95.9% on test**, with lift ≈ 2.8 (roughly triples the odds of an upcoming
   high-volatility window versus the ~33% base rate). The near-zero
   train/test gap across all top 5 rules is strong evidence these are real
   patterns, not artifacts of the train split.
-- The same two features — `realized_vol_book` and `avg_spread_bps` — that
+- The same two features - `realized_vol_book` and `avg_spread_bps` - that
   dominated the regression task's feature importances (0.52 and 0.22) and
   characterized the K-Means "stressed" cluster are also the core antecedents
   of the strongest rules here. All four MLlib tasks independently converge
@@ -183,8 +183,8 @@ md("""## Takeaways
   clearest signals of what happens next.
 - Association rule mining is unsupervised/descriptive by nature (mined
   purely from feature co-occurrence, with no accuracy metric to optimize),
-  which is why the test-set re-check here — not required by the algorithm
-  itself — was added deliberately to demonstrate generalization the same way
+  which is why the test-set re-check here - not required by the algorithm
+  itself - was added deliberately to demonstrate generalization the same way
   the other three tasks do.""")
 
 code("""spark.stop()""")

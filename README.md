@@ -22,3 +22,5 @@ Deployed on GCP: GCS (data lake) → Dataproc (Spark, run as a one-click
 Workflow Template) → MongoDB on a GCE VM (results store) → Jupyter via
 Dataproc Component Gateway (visualization). Full setup commands in
 [GCP_DEPLOYMENT.md](GCP_DEPLOYMENT.md).
+
+![Architecture diagram](docs/architecture.png)
