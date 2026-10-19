@@ -20,6 +20,7 @@ is the visualisation/results layer, since re-running Spark ML training on
 version control).""")
 
 code("""import sys
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -27,6 +28,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+warnings.filterwarnings("ignore")
 sns.set_theme(style="whitegrid")
 plt.rcParams["figure.dpi"] = 110
 
@@ -39,7 +41,7 @@ from pyspark.ml import PipelineModel
 from pyspark.sql import functions as F
 from pyspark.ml.evaluation import RegressionEvaluator
 
-spark = get_spark()
+spark = get_spark(quiet=True)
 model = PipelineModel.load(str(MODELS_DIR / "regression_best"))
 gbt = model.stages[-1]
 print("Loaded model:", type(gbt).__name__, "| trees:", gbt.getNumTrees, "| maxDepth:", gbt.getOrDefault("maxDepth"))""")

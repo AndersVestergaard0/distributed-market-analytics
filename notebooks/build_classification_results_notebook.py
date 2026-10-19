@@ -21,6 +21,7 @@ for why a "next window" label (as used in the regression task) was not
 valid here (time_id ordering is anonymised, not chronological).""")
 
 code("""import sys
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -28,6 +29,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+warnings.filterwarnings("ignore")
 sns.set_theme(style="whitegrid")
 plt.rcParams["figure.dpi"] = 110
 
@@ -40,7 +42,7 @@ from pyspark.ml import PipelineModel
 from pyspark.ml.feature import IndexToString
 from pyspark.ml.evaluation import MulticlassClassificationEvaluator
 
-spark = get_spark()
+spark = get_spark(quiet=True)
 model = PipelineModel.load(str(MODELS_DIR / "classification_best"))
 rf = model.stages[-1]
 label_order = model.stages[0].labels  # StringIndexer's fitted label order

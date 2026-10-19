@@ -29,12 +29,14 @@ train, to confirm the rules reflect real structure rather than a train-set
 artifact.""")
 
 code("""import sys
+import warnings
 from pathlib import Path
 
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+warnings.filterwarnings("ignore")
 sns.set_theme(style="whitegrid")
 plt.rcParams["figure.dpi"] = 110
 
@@ -50,7 +52,7 @@ from association_rules import (
 from pyspark.ml.fpm import FPGrowthModel
 from pyspark.sql import functions as F
 
-spark = get_spark()
+spark = get_spark(quiet=True)
 model = FPGrowthModel.load(str(MODELS_DIR / "association_rules_best"))
 print("Loaded FPGrowth model | minSupport =", MIN_SUPPORT, "| minConfidence =", MIN_CONFIDENCE)""")
 

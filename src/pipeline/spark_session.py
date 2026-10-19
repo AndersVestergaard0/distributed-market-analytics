@@ -3,7 +3,7 @@ import os
 from pyspark.sql import SparkSession
 
 
-def get_spark(app_name: str = "distributed-market-analytics") -> SparkSession:
+def get_spark(app_name: str = "distributed-market-analytics", quiet: bool = False) -> SparkSession:
     builder = (
         SparkSession.builder.appName(app_name)
         .config("spark.sql.shuffle.partitions", "12")
@@ -17,4 +17,15 @@ def get_spark(app_name: str = "distributed-market-analytics") -> SparkSession:
     if not os.environ.get("DATA_ROOT", "").startswith("gs://"):
         builder = builder.master("local[2]").config("spark.driver.memory", "3g")
 
-    return builder.getOrCreate()
+    # quiet=True is for the results notebooks: the stage progress bars
+    # ("[Stage 44:====>...]") are decided at session construction, not
+    # settable afterwards, so this has to be a builder config rather than a
+    # post-hoc setLogLevel call. Pipeline scripts leave this off so job logs
+    # stay visible in the Dataproc console.
+    if quiet:
+        builder = builder.config("spark.ui.showConsoleProgress", "false")
+
+    spark = builder.getOrCreate()
+    if quiet:
+        spark.sparkContext.setLogLevel("ERROR")
+    return spark

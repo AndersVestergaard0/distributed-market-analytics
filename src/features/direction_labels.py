@@ -5,8 +5,8 @@ documentation), so unlike the regression task (which consumes Optiver's own
 pre-computed next-window target), we cannot safely build a "next window"
 label ourselves.
 
-Instead we use seconds_in_bucket -- a real, reliable clock *within* each
-10-minute window -- to build a genuine forecasting split:
+Instead we use seconds_in_bucket - a real, reliable clock *within* each
+10-minute window - to build a genuine forecasting split:
   - predictors: engineered from the FIRST half of the window only
     (seconds_in_bucket < 300)
   - label: direction of the mid-price move from the end of the first half
@@ -46,7 +46,7 @@ def build_direction_table(spark):
     early_trade = trade.filter(F.col("seconds_in_bucket") < EARLY_CUTOFF)
 
     # the expensive windowed OFI/log-return computation only needs to run on
-    # the early half -- the late half is only used for its mid_price at the
+    # the early half - the late half is only used for its mid_price at the
     # last snapshot (for the label), which needs no window function at all
     early_book = add_flow_features(early_book)
 

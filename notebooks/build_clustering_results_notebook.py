@@ -22,6 +22,7 @@ unsupervised - `target` (next-window realized volatility) is never used to
 fit the model, only afterwards to help interpret what each cluster means.""")
 
 code("""import sys
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -30,6 +31,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.decomposition import PCA
 
+warnings.filterwarnings("ignore")
 sns.set_theme(style="whitegrid")
 plt.rcParams["figure.dpi"] = 110
 
@@ -43,7 +45,7 @@ from pyspark.ml import PipelineModel
 from pyspark.ml.evaluation import ClusteringEvaluator
 from pyspark.sql import functions as F
 
-spark = get_spark()
+spark = get_spark(quiet=True)
 model = PipelineModel.load(str(MODELS_DIR / "clustering_best"))
 kmeans_model = model.stages[-1]
 k = kmeans_model.getK()
