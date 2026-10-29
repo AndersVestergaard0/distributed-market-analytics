@@ -308,25 +308,16 @@ if you want it gone too.)
 
 ## Access for your teacher
 
-The simplest path needs **zero GCP access** - see the README's "For my
-teacher / reviewers" section: the results notebooks are committed to the
-repo with their outputs baked in (GitHub renders `.ipynb` natively), and
-`http://$MONGO_EXTERNAL_IP:8081` (mongo-express, Part 2) is public and
-read-only, so anyone with the link can browse the curated results documents
-each task wrote. Send the repo link and the mongo-express link; that's it.
+**No GCP account or infrastructure needed at all** to see the results: the
+notebooks are committed to the repo with their outputs already baked in
+(GitHub renders `.ipynb` natively). Send the repo link; that's it. There is
+no live mongo-express link - the MongoDB VM is torn down between
+submissions to avoid ongoing GCE costs on a student account.
 
-If your teacher instead wants to **re-run the pipeline themselves** or use
-the interactive JupyterLab cluster (Part 5) rather than the notebooks as
-committed, they'll need access to your GCP project, granted from
-**IAM & Admin → IAM → Grant Access** in the Console:
-
-- `roles/dataproc.editor` - lets them open Workflow Templates and click Run,
-  and open the Jupyter cluster's Component Gateway link.
-- `roles/storage.objectViewer` - lets them browse `gs://$BUCKET` (code, data,
-  notebooks) in the Console.
-
-With that, from the Console they can open **Dataproc → Workflow Templates →
-market-analytics-pipeline → Run** to execute the whole pipeline from
-scratch, or open the `$CLUSTER_JUPYTER` cluster's JupyterLab link (Part 5) -
-note that cluster isn't left running by default (it's billed hourly), so
-you'd need to create it first (Part 5) before sharing that link.
+If your teacher wants to **re-run the pipeline themselves** (e.g. to verify
+it from scratch, or during Week 13 marking), they should **provision their
+own resources in their own GCP project**, following this document from Part
+0 - the "Running this from Cloud Shell" section at the top covers exactly
+this, and needs nothing from your project: they `git clone` the repo, set
+their own `$PROJECT_ID`, and Parts 1-2 create their own bucket and their own
+MongoDB VM.
