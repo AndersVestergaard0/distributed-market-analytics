@@ -25,12 +25,17 @@ N_FOLDS = 5
 
 
 def write_time_id_folds(spark, features, k=N_FOLDS):
-    """Bin distinct time_ids into k *consecutive, time-ordered* folds.
+    """Bin distinct time_ids into k folds, ordered by raw time_id value.
 
-    Unlike the random train/val/test split above, walk-forward evaluation
-    needs folds that respect chronological order (fold i is trained on all
-    time_ids before it, not a random subset) - so this orders time_id
-    ascending and buckets by rank, rather than randomSplit.
+    time_id is anonymised and NOT chronologically ordered (Optiver's own
+    documentation, see direction_labels.py), so sorting by it does not
+    recover real chronological order - these folds are a fixed, reproducible
+    partition of the data, not a true past/future split. Unlike the random
+    train/val/test split above, each fold is a contiguous block of time_id
+    rank rather than a random subset, which is useful for checking that
+    model performance is stable across different, non-overlapping subsets of
+    the data (see walk_forward.py) - but it is not evidence about temporal
+    leakage.
     """
     time_ids = features.select("time_id").distinct()
     ordered = Window.orderBy("time_id")

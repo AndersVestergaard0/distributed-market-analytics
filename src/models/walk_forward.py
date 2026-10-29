@@ -1,11 +1,14 @@
-"""Walk-forward stability check for the regression task.
+"""Fold-stability check for the regression task.
 
-Instead of one static train/val/test split, trains on every time_id before
-fold i and evaluates on fold i, for each fold produced by
-split.write_time_id_folds(). This is proper walk-forward evaluation (always
-trains on the past, never on the future) rather than k-fold cross-validation,
-and shows whether RMSPE is stable across the dataset or whether the headline
-number in regression.py is a lucky split.
+Instead of one static train/val/test split, trains on every time_id in folds
+before fold i and evaluates on fold i, for each fold produced by
+split.write_time_id_folds(). time_id is anonymised and not chronologically
+ordered, so the fold order is an arbitrary but fixed partition of the data,
+not real chronology - this is NOT true walk-forward evaluation and makes no
+past-vs-future guarantee. It is still a useful stability check: it shows
+whether RMSPE holds up across several non-overlapping subsets of the data,
+rather than relying on a single train/val/test split that could be a lucky
+cut, as in regression.py.
 """
 
 from pathlib import Path

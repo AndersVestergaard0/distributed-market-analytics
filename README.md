@@ -6,9 +6,10 @@ dataset. Built for INFS3208 (Cloud Computing) at UQ.
 
 ## Results - no setup required
 
-- **[Live results database](http://34.151.134.53:8081)** (mongo-express) -
-  the curated metrics/interpretation each pipeline task wrote (regression,
-  clustering, classification, association rules). Public and read-only.
+- **Live results database (mongo-express)** - currently taken down to avoid
+  ongoing GCE VM costs. The notebooks below cover the same results with
+  their outputs already baked in; redeploy via
+  [GCP_DEPLOYMENT.md](GCP_DEPLOYMENT.md) Part 2 to bring it back.
 - **Results notebooks** (rendered on GitHub, no download needed):
   [Regression](notebooks/Regression_Results.ipynb) ·
   [Clustering](notebooks/Clustering_Results.ipynb) ·
